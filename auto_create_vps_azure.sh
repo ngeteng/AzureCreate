@@ -14,8 +14,6 @@ RG_NAME="autoRG"
 LOCATION="eastasia"
 VM_NAME="autoVM"
 VM_SIZE="Standard_B1s"
-# Menggunakan image Ubuntu 22.04 LTS via alias yang didukung di region
-IMAGE="Ubuntu2204"
 ADMIN_USER="azureuser"
 SSH_KEY_PATH="$HOME/.ssh/id_rsa.pub"
 
@@ -37,24 +35,33 @@ fi
 echo "=== Membuat Resource Group: $RG_NAME di $LOCATION ==="
 az group create --name "$RG_NAME" --location "$LOCATION"
 
-# 4. Buat VM dengan spesifikasi minimum
+# 4. Ambil URN image Ubuntu 22.04 LTS dari Canonical secara dinamis
+echo "=== Mendapatkan image Ubuntu 22.04 LTS terbaru di region $LOCATION ==="
+IMAGE_URN=$(az vm image list \
+  --publisher Canonical \
+  --offer UbuntuServer \
+  --sku 22_04-lts \
+  --location "$LOCATION" \
+  --query '[0].urn' -o tsv)
+echo "Menggunakan image: $IMAGE_URN"
+
+# 5. Buat VM dengan spesifikasi minimum
 echo "=== Membuat VM: $VM_NAME ==="
 az vm create \
   --resource-group "$RG_NAME" \
   --name "$VM_NAME" \
-  --image "$IMAGE" \
+  --image "$IMAGE_URN" \
   --size "$VM_SIZE" \
   --admin-username "$ADMIN_USER" \
   --ssh-key-values "$SSH_KEY_PATH" \
   --output table
 
-# 5. Buka port SSH (22)
+# 6. Buka port SSH (22)
 echo "=== Mengizinkan akses SSH (port 22) ==="
 az vm open-port --resource-group "$RG_NAME" --name "$VM_NAME" --port 22 --priority 1000
 
-# 6. Tampilkan alamat IP publik
+# 7. Tampilkan alamat IP publik
 echo "=== Mendapatkan IP Publik ==="
 PUBLIC_IP=$(az vm list-ip-addresses --resource-group "$RG_NAME" --name "$VM_NAME" --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
-echo "VM '$VM_NAME' berhasil dibuat!"
-echo "Anda dapat mengaksesnya melalui SSH dengan perintah:" 
-	echo "  ssh $ADMIN_USER@${PUBLIC_IP}"
+echo "VM '$VM_NAME' berhasil dibuat di $LOCATION!"
+echo "Akses via SSH: ssh $ADMIN_USER@${PUBLIC_IP}"
