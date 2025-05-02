@@ -14,6 +14,8 @@ RG_NAME="autoRG"
 LOCATION="eastasia"
 VM_NAME="autoVM"
 VM_SIZE="Standard_B1s"
+# Gunakan alias image yang valid di Azure Marketplace
+IMAGE="Ubuntu2204"
 ADMIN_USER="azureuser"
 SSH_KEY_PATH="$HOME/.ssh/id_rsa.pub"
 
@@ -35,37 +37,27 @@ fi
 echo "=== Membuat Resource Group: $RG_NAME di $LOCATION ==="
 az group create --name "$RG_NAME" --location "$LOCATION"
 
-# 4. Cari versi terbaru Ubuntu 22.04 LTS dan bentuk URN
-echo "=== Mencari versi Ubuntu 22.04 LTS di region $LOCATION ==="
-VERSION=$(az vm image list \
-  --publisher Canonical \
-  --offer UbuntuServer \
-  --sku 22_04-lts \
-  --location "$LOCATION" \
-  --query '[0].version' -o tsv)
-if [[ -z "$VERSION" ]]; then
-  echo "[ERROR] Gagal mendapatkan versi Ubuntu 22.04 LTS."
-  exit 1
-fi
-IMAGE_URN="Canonical:UbuntuServer:22_04-lts:$VERSION"
-echo "Menggunakan image URN: $IMAGE_URN"
-
-# 5. Buat VM dengan spesifikasi minimum
-echo "=== Membuat VM: $VM_NAME ==="
-az vm create \
+# 4. Buat VM dengan spesifikasi minimum
+echo "=== Membuat VM: $VM_NAME dengan image $IMAGE ==="
+if ! az vm create \
   --resource-group "$RG_NAME" \
   --name "$VM_NAME" \
-  --image "$IMAGE_URN" \
+  --image "$IMAGE" \
   --size "$VM_SIZE" \
   --admin-username "$ADMIN_USER" \
   --ssh-key-values "$SSH_KEY_PATH" \
-  --output table
+  --output table; then
+  echo "[ERROR] Gagal membuat VM dengan image '$IMAGE'."
+  echo "Listing image alias yang valid di region $LOCATION (publisher Canonical, offer UbuntuServer, sku 22_04-lts):"
+  az vm image list --publisher Canonical --location "$LOCATION" --query "[].offer" -o table
+  exit 1
+fi
 
-# 6. Buka port SSH (22)
+# 5. Buka port SSH (22)
 echo "=== Mengizinkan akses SSH (port 22) ==="
 az vm open-port --resource-group "$RG_NAME" --name "$VM_NAME" --port 22 --priority 1000
 
-# 7. Tampilkan alamat IP publik
+# 6. Tampilkan alamat IP publik
 echo "=== Mendapatkan IP Publik ==="
 PUBLIC_IP=$(az vm list-ip-addresses --resource-group "$RG_NAME" --name "$VM_NAME" --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
 echo "VM '$VM_NAME' berhasil dibuat di $LOCATION!"
