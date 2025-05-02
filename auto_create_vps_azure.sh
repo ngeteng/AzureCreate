@@ -14,7 +14,7 @@ RG_NAME="autoRG"
 LOCATION="eastasia"
 VM_NAME="autoVM"
 VM_SIZE="Standard_B1s"
-IMAGE="UbuntuLTS"
+IMAGE="Ubuntu2204"
 ADMIN_USER="azureuser"
 SSH_KEY_PATH="$HOME/.ssh/id_rsa.pub"
 
