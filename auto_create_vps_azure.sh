@@ -11,7 +11,7 @@ set -eo pipefail
 
 # Default konfigurasi (ubah sesuai kebutuhan)
 RG_NAME="autoRG"
-LOCATION="southeastasia"
+LOCATION="eastasia"
 VM_NAME="autoVM"
 VM_SIZE="Standard_B1s"
 IMAGE="UbuntuLTS"
