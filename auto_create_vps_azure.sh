@@ -14,7 +14,8 @@ RG_NAME="autoRG"
 LOCATION="eastasia"
 VM_NAME="autoVM"
 VM_SIZE="Standard_B1s"
-IMAGE="Ubuntu2204"
+# Menggunakan image Ubuntu 22.04 LTS dari Canonical
+IMAGE="Canonical:0001-com-ubuntu-server-jammy:22_04-lts:latest"
 ADMIN_USER="azureuser"
 SSH_KEY_PATH="$HOME/.ssh/id_rsa.pub"
 
