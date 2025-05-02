@@ -35,15 +35,20 @@ fi
 echo "=== Membuat Resource Group: $RG_NAME di $LOCATION ==="
 az group create --name "$RG_NAME" --location "$LOCATION"
 
-# 4. Ambil URN image Ubuntu 22.04 LTS dari Canonical secara dinamis
-echo "=== Mendapatkan image Ubuntu 22.04 LTS terbaru di region $LOCATION ==="
-IMAGE_URN=$(az vm image list \
+# 4. Cari versi terbaru Ubuntu 22.04 LTS dan bentuk URN
+echo "=== Mencari versi Ubuntu 22.04 LTS di region $LOCATION ==="
+VERSION=$(az vm image list \
   --publisher Canonical \
   --offer UbuntuServer \
   --sku 22_04-lts \
   --location "$LOCATION" \
-  --query '[0].urn' -o tsv)
-echo "Menggunakan image: $IMAGE_URN"
+  --query '[0].version' -o tsv)
+if [[ -z "$VERSION" ]]; then
+  echo "[ERROR] Gagal mendapatkan versi Ubuntu 22.04 LTS."
+  exit 1
+fi
+IMAGE_URN="Canonical:UbuntuServer:22_04-lts:$VERSION"
+echo "Menggunakan image URN: $IMAGE_URN"
 
 # 5. Buat VM dengan spesifikasi minimum
 echo "=== Membuat VM: $VM_NAME ==="
@@ -64,4 +69,4 @@ az vm open-port --resource-group "$RG_NAME" --name "$VM_NAME" --port 22 --priori
 echo "=== Mendapatkan IP Publik ==="
 PUBLIC_IP=$(az vm list-ip-addresses --resource-group "$RG_NAME" --name "$VM_NAME" --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
 echo "VM '$VM_NAME' berhasil dibuat di $LOCATION!"
-echo "Akses via SSH: ssh $ADMIN_USER@${PUBLIC_IP}"
+echo "Silakan akses via SSH: ssh $ADMIN_USER@${PUBLIC_IP}"
